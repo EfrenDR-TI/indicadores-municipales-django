@@ -148,9 +148,7 @@ docs/Analisis_Proyecto_Indicadores_Municipales.pdf
 ## 👤 Autor
 
 **Efrén Dolores**
-
 Ingeniero en Informática
-
 Especialista en análisis de sistemas, bases de datos y visualización de información
 
 ## 📌 Notas finales
