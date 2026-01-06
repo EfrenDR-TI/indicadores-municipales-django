@@ -64,7 +64,7 @@ Proyecto_Django/
 ├── datawizard/                    # Archivos de carga de datos (Excel)
 ├── manage.py
 └── README.md
-
+```
 ## 🗂 Fuentes de información
 
 Los indicadores presentados se construyen con base en:
