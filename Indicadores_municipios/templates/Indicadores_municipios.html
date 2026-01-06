@@ -1,0 +1,543 @@
+{#
+Template principal para la visualización de indicadores educativos
+a nivel nacional y municipal.
+
+Funcionalidades:
+- Filtros dinámicos por nivel e indicador
+- Tabla interactiva con búsqueda y paginación
+- Mapa temático (Highcharts Maps)
+- Gráfica comparativa (Highcharts)
+
+Tecnologías:
+- Django (views + context)
+- Highcharts / Highmaps
+- CSS institucional GobMX
+
+Autor: Efrén Dolores
+#}
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<!--########### Estilos utilizados en la pagina, carpeta stactic/CSS  ######################-->     
+    <link href="{% static "css/index.css" %}" rel="stylesheet">
+<!-- Favicon -->
+    <link href="{% static "media/favicon.png" %}" rel="shortcut icon">
+<!-- Estilos institucionales del Gobierno de México -->
+    <link href="https://framework-gb.cdn.gob.mx/assets/styles/main.css" rel="stylesheet">
+<!--###################### Titulo de la la pestaña #########################################-->
+    <title>Indicadores Municipales</title>    
+</head>
+<body>
+<!--########################################################################################-->    
+<!--##############################  Navegación de MEJOREDU #################################-->    
+    <nav class="navbar navbar-inverse sub-navbar navbar-fixed-top">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#subenlaces">
+              <span class="sr-only">Interruptor de Navegación</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="https://www.gob.mx/mejoredu">MEJOREDU</a>
+          </div>
+          <div class="collapse navbar-collapse" id="subenlaces">
+            <ul class="nav navbar-nav navbar-right">
+                  <li><a href="https://www.mejoredu.gob.mx/si-mejoredu">SI-Mejoredu</a></li>
+                  <li><a href="https://www.mejoredu.gob.mx/">Entre docentes</a></li>
+                  <li><a href="https://www.mejoredu.gob.mx/publicaciones">Publicaciones</a></li>
+                  <li><a href="https://www.mejoredu.gob.mx/repositorio">Repositorio</a></li>
+                  <li><a href="https://www.mejoredu.gob.mx/armonizacion-contable">Armonización</a></li>
+                  <li><a href="https://www.mejoredu.gob.mx/transparencia/proteccion-de-datos-personales">Datos Personales</a></li>
+                  <li><a href="https://www.mejoredu.gob.mx/transparencia">Transparencia</a></li>                  
+            </ul>
+          </div>
+        </div>
+    </nav>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+<!--###############################################################################################################-->    
+<!--####################### Banner Imagen de Fichas por entidad y municipio ########################################-->        
+<div class="container">
+        <div id="banner">
+            <h1>
+                <a href="{% url 'mostrar_indicadores' %}">
+                    <img src="{% static "media/Banner_Fichas.jpg"  %}" alt="">
+                </a>
+            </h1>
+        </div>
+        <div>
+            <p><span style="font-size: 12pt;">Este módulo se integra por 
+            <span style="color: #3d8161;"><strong>2,469 fichas de información educativa por municipio.</strong></span>
+            Cada una de éstas presenta cifras de población; algunos indicadores educativos; los grupos lingüísticos y el número de hablantes de lengua indígena que reportó el censo de población 2020 del INEGI.
+            Además, incluye el número de centros escolares de los niveles que conforman la educación básica por tipo de servicio y de educación media superior por tipo de plantel registrados en el Formato 911 en el ciclo escolar 2020-2021,
+            que operan en cada demarcación.
+            </span></p>        
+        </div>
+        <h2>Indicadores Municipales</h2>
+        <hr class="red">
+        <h3>Seleccione el nivel e indicador de información de su interés</h3><br> 
+<!--############################################################-->
+<!--############## Formulario de selección #####################-->
+        <div class="form-container">
+            <form method="get" action="{% url 'mostrar_indicadores' %}" class="form-horizontal" id="formulario">
+                <!-- Selector para el tipo de búsqueda--> 
+                <div class="form-group">
+                    <label for="nivel">Tipo de búsqueda:</label>
+                    <select class="form-control" name="nivel" id="nivel" onchange="this.form.submit()">
+                        <option value="nacional" {% if nivel == 'nacional' %}selected{% endif %}>Nivel Entidad</option>
+                        <option value="entidad" {% if nivel == 'entidad' %}selected{% endif %}>Nivel Municipal</option>
+                    </select>
+                </div>
+                {% if nivel == 'entidad' %}
+                <div class="form-group">
+                    <label for="entidad">Seleccione la entidad:</label>                    
+                    <select class="form-control" name="entidad" id="entidad">
+                        <option value="" disabled selected>Selecciona una entidad</option>   
+                        {% for entidad in entidades %}
+                        <option value="{{ entidad }}" {% if entidad == entidad_seleccionada %}selected{% endif %}>
+                            {{ entidad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="form-group">
+                    <label for="indicador">Seleccione un indicador:</label>
+                    <select class="form-control" name="indicador" id="indicador">
+                        {% for indicador in indicadores_disponibles %}
+                        <option value="{{ indicador.value }}"
+                            {% if indicador_seleccionado == indicador.value %}selected{% endif %}>
+                            {{ indicador.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button id="boton-consultar" class="btn btn-primary" type="submit">Consultar resultados</button>
+                </div>
+            </form>
+        </div><br>
+        <h4>{{ indicador_label }}</h4>
+        <hr class="red">
+        <div>
+            <b  style="position: relative; bottom: 15px;">Elige la forma para visualizar la información:</b>
+            <img id="tablaButton" src="{% static "media/iconoTabla.jpg"  %}" style="width: 50px;  margin-left: 50px; padding-bottom: 20px;" onclick="MostrarOcultarTablasMapas('OcultarMostrarTabla');">
+            <img id="mapaButton" src="{% static "media/iconoMapa.jpg"  %}" style="width: 50px;  margin-left: 50px; padding-bottom: 20px;" onclick="MostrarOcultarTablasMapas('OcultarMostrarMapa');">
+            <img id="graficaButton"  src="{% static "media/iconogr.jpg"  %}" style="width: 50px;  margin-left: 50px; padding-bottom: 20px;" onclick="MostrarOcultarTablasMapas('OcultarMostrarGrafica');">
+        </div>        
+<!--##################################################################-->
+<!--################# Tabla con paginación, buscardor, ###############-->
+        {% if datos %}
+        <div id="OcultarMostrarTabla" class="table-container" style="overflow: auto; white-space: nowrap;">
+            <form class="form-inline">
+            <div class="form-group">
+                <label for="rowsPerPage"> Mostrando 
+                <select class="form-control" id="rowsPerPage">
+                    <option value="40">40</option>
+                    <option value="80">80</option>
+                    <option value="100">100</option>
+                    <option value="150">150</option>
+                </select>
+                Entradas</label>
+            </div>
+            <div class="form-group" style="text-align: right; float: right;">
+                <label> Buscar:
+                <input class="form-control" type="search" id="searchInput">
+                </label>
+            </div>
+            </form>
+            <table class="table table-striped" style="height: 500px; border: solid rgb(51, 92, 173) 1.5px; margin: 10px auto">
+                <thead>
+                    <tr>
+                        {% for key in datos.0.keys %}
+                        <th>{{ key }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    {% for dato in datos %}
+                    <tr>
+                        {% for value in dato.values %}
+                        <td class="{% if value|stringformat:"d" %}center{% endif %}">{{ value }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="font-size: 11px;">
+                <em><b>Fuente:</b> Mejoredu, cálculos con base en: </em></br>
+                <em><b>¹</b> Metodología del INPI y cifras censales 2020.</em></br>
+                <em><b>²</b> Índice de Marginación por Municipio 2020 (CONAPO, 2022).</em></br>
+                <em><b>³</b> Censo de Población y Vivienda 2020 (INEGI, 2021); Indicadores Socioeconómicos de los pueblos Indígenas y afromexicano 2020(INPI, 2022).</em></br>
+                <em><b>⁴</b> Estadísticas Continuas del Formato 911 (fin del ciclo escolar 2019-2020 e inicio del ciclo escolar 2020-2021)(SEP-DGPPYEE, 2021).</em></br>
+                <em><b>*</b> Para cualquier duda o más información, comunicarse al correo: <a href="url">contacto.sistema@mejoredu.gob.mx</a></em>                           
+            </div>    
+            <div style="text-align: right; float: right;">
+                <ul class="pagination" id="pagination"></ul>
+            </div>
+        </div>
+        {% else %}
+        <p>No se encontraron datos para la consulta seleccionada.</p>
+        {% endif %}
+<!--################ Contenedor del Mapa y Grafica ###########-->
+        <div id="OcultarMostrarMapa" style="display: none; height: 700px; border: solid rgb(51, 92, 173) 1.5px; margin: 10px auto"></div>
+        <div id="OcultarMostrarGrafica" style="display: none; height: 700px; border: solid rgb(51, 92, 173) 1.5px; margin: 10px auto"></div>
+</div>
+<!--####################################################################-->    
+<!--###################  Script Mapa ################################-->    
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const nivel = "{{ nivel }}";
+        const entidad = "{{ entidad_seleccionada }}";
+        const datosMapa = {{ datos_mapa|default:"[]"|safe }};
+        const entidadMap = {
+            "Aguascalientes": "01",
+            "Baja California": "02",
+            "Baja California Sur": "03",
+            "Campeche": "04",
+            "Coahuila de Zaragoza": "05",
+            "Colima": "06",
+            "Chiapas": "07",
+            "Chihuahua": "08",
+            "Ciudad de México": "09",
+            "Durango": "10",
+            "Guanajuato": "11",
+            "Guerrero": "12",
+            "Hidalgo": "13",
+            "Jalisco": "14",
+            "México": "15",
+            "Michoacán de Ocampo": "16",
+            "Morelos": "17",
+            "Nayarit": "18",
+            "Nuevo León": "19",
+            "Oaxaca": "20",
+            "Puebla": "21",
+            "Querétaro": "22",
+            "Quintana Roo": "23",
+            "San Luis Potosí": "24",
+            "Sinaloa": "25",
+            "Sonora": "26",
+            "Tabasco": "27",
+            "Tamaulipas": "28",
+            "Tlaxcala": "29",
+            "Veracruz": "30",
+            "Yucatán": "31",
+            "Zacatecas": "32"
+        };
+        if (nivel === 'nacional' && datosMapa.length > 0) {
+            fetch("https://code.highcharts.com/mapdata/countries/mx/mx-all.topo.json")
+                .then(response => response.json())
+                .then(topology => {
+                    const minValue = Math.min(...datosMapa.map(item => item.value));
+                    const maxValue = Math.max(...datosMapa.map(item => item.value));
+                    Highcharts.mapChart('OcultarMostrarMapa', {
+                        caption: { // Muestra la fuente cita en la parte inferior del mapa entidad
+                            text: '<em><b>Fuente:</b> Mejoredu, cálculos con base en: </em>' + '</br>' +
+                                  '<em><b>¹</b> Metodología del INPI y cifras censales 2020.</em>' + '</br>' +
+                                  '<em><b>²</b> Índice de Marginación por Municipio 2020 (CONAPO, 2022).</em>' + '</br>' +
+                                  '<em><b>³</b> Censo de Población y Vivienda 2020 (INEGI, 2021); Indicadores Socioeconómicos de los pueblos Indígenas y afromexicano 2020(INPI, 2022).</em>' + '</br>' +
+                                  '<em><b>⁴</b> Estadísticas Continuas del Formato 911 (fin del ciclo escolar 2019-2020 e inicio del ciclo escolar 2020-2021)(SEP-DGPPYEE, 2021).</em>' + '</br>' +
+                                  '<em><b>*</b> Para cualquier duda o más información, comunicarse al correo: <a href="url">contacto.sistema@mejoredu.gob.mx</a></em>',
+                            style:{
+                               fontfamily:'Montserrat',
+                               fontSize: '11px',                                        
+                            } 
+                        },             
+                        chart: {
+                            map: topology
+                        },
+                        title: {
+                            text: '<img src="{% static "media/logo.jpg"  %}" alt="Imagen" style="height: 50px; vertical-align: middle;"><br>',
+                                useHTML: true,
+                            }, 
+                        subtitle: {
+                                text: '{{ indicador_label }}',
+                                style: {
+                                    fontfamily:'Montserrat',
+                                    fontSize: '15px',
+                                    color: 'black',
+                                }                                
+                            },                            
+                        colorAxis: {
+                            min: minValue,
+                            max: maxValue,
+                            stops: [
+                                [0, "#C7D4D4"],      // Color más claro
+                                [0.2, "#C4D4CC"],   // Color intermedio claro
+                                [0.5, "#90A4A4"],   // Color intermedio
+                                [1, "#245C54"]      // Color más oscuro
+                            ]
+                        },
+                        series: [{
+                            data: datosMapa.map(item => ({
+                                'hc-key': item.hc_key,
+                                value: item.value 
+                            })),
+                            name: '{{ indicador_label }}',
+                            states: {
+                                hover: {
+                                    color: '#245C54'
+                                }
+                            },
+                            dataLabels: {
+                                enabled: false,
+                                format: '{point.name}: {point.value} %'
+                            },
+                            tooltip: {
+                                    headerFormat: "",
+                                    pointFormat: "<b>{point.name}</b>: {point.value} %" // Tooltip con detalles
+                                },                            
+                        }]
+                    });
+                });
+        } 
+        else if (nivel === 'entidad' && entidad) {
+            const entidadClave = entidadMap[entidad];
+            let jsonFile = `/static/data/Ent_${entidadClave}.geojson`;
+            fetch(jsonFile)
+                .then(response => {
+                    if (!response.ok) {
+                        jsonFile = `/static/data/Ent_${entidadClave}.json`; // Intenta con JSON si no se encuentra el GeoJSON
+                        return fetch(jsonFile);
+                    }
+                    return response;
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Asegúrate de que las claves del GeoJSON coincidan con los datos del modelo
+                        data.features.forEach(feature => {
+                            const matchingData = datosMapa.find(item => item["hc-key"] === feature.properties.mun_code);
+                            if (matchingData) {
+                                feature.properties.value = matchingData.value; // Asigna el valor del indicador
+                                feature.properties.name = matchingData.name; // Asigna el nombre del municipio
+                            } else {
+                                feature.properties.value = 0; // Valor por defecto si no coincide
+                                feature.properties.name = "Municipio desconocido";
+                            }
+                        });
+                        // Configuración de escala de colores para el mapa
+                        const minValue = Math.min(...datosMapa.map(item => item.value)) || 0;
+                        const maxValue = Math.max(...datosMapa.map(item => item.value)) || 100;
+                        // Renderiza el mapa para la entidad seleccionada
+                        Highcharts.mapChart('OcultarMostrarMapa', {
+                            caption: {// Muestra la fuente cita en la parte inferior del mapa municipio
+                                text: 
+                                      '<em><b>Fuente:</b> Mejoredu, cálculos con base en: </em>' + '</br>' +
+                                      '<em><b>¹</b> Metodología del INPI y cifras censales 2020.</em>' + '</br>' +
+                                      '<em><b>²</b> Índice de Marginación por Municipio 2020 (CONAPO, 2022).</em>' + '</br>' +
+                                      '<em><b>³</b> Censo de Población y Vivienda 2020 (INEGI, 2021); Indicadores Socioeconómicos de los pueblos Indígenas y afromexicano 2020(INPI, 2022).</em>' + '</br>' +
+                                      '<em><b>⁴</b> Estadísticas Continuas del Formato 911 (fin del ciclo escolar 2019-2020 e inicio del ciclo escolar 2020-2021)(SEP-DGPPYEE, 2021).</em>' + '</br>' +
+                                      '<em><b>*</b> Para cualquier duda o más información, comunicarse al correo: <a href="url">contacto.sistema@mejoredu.gob.mx</a></em>',
+                                 style:{
+                                    fontfamily:'Montserrat',
+                                    fontSize: '11px',                                        
+                                }     
+                            },
+                            chart: {
+                                map: data
+                            },
+                            title: {
+                                text: '<img src="{% static "media/logo.jpg"  %}" alt="Imagen" style="height: 50px; vertical-align: center;"><br>',
+                                useHTML: true
+                            },
+                            subtitle: {
+                                text: '{{ indicador_label }}',
+                                style: {
+                                    fontfamily:'Montserrat',
+                                    fontSize: '15px',
+                                    color: 'black',
+                                }                                   
+                            },
+                            mapNavigation: {
+                            enabled: true,
+                            buttonOptions: {
+                                verticalAlign: 'bottom'
+                                }
+                            },
+                            colorAxis: {
+                                min: Math.min(...datosMapa.map(item => item.value)) || 0,
+                                max: Math.max(...datosMapa.map(item => item.value)) || 100,
+                                stops: [
+                                    [0, "#C7D4D4"],      // Color más claro
+                                    [0.2, "#C4D4CC"],   // Color intermedio claro
+                                    [0.5, "#90A4A4"],   // Color intermedio
+                                    [1, "#245C54"]       // Color más oscuro
+                                ]
+                            },
+                            series: [{
+                                data: datosMapa,
+                                joinBy: "mun_code",
+                                name: '{{ indicador_label }}',
+                                states: {
+                                    hover: {
+                                        color: "#245C54"
+                                    }
+                                },
+                                dataLabels: {
+                                    enabled: false,
+                                    format: "{point.name}: {point.value} %" // Nombre y valor en etiquetas
+                                },
+                                tooltip: {
+                                    headerFormat: "",
+                                    pointFormat: "<b>{point.name}</b>: {point.value} %" // Tooltip con detalles
+                                },
+                            }]
+                        });
+                    })
+                    .catch(error => console.error(`Error al cargar el archivo para la entidad ${entidad}:`, error));
+            }
+        });
+</script>
+<!--####################################################################-->    
+<!--###################  Script Grafica ################################-->    
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const nivel = "{{ nivel }}"; // Nivel seleccionado (nacional o entidad)
+        const entidadSeleccionada = "{{ entidad_seleccionada|default:'' }}"; // Entidad seleccionada
+        const indicadorNombre = "{{ indicador|default:'' }}"; // Nombre del indicador seleccionado
+        const datosGrafica = {{ datos_grafica|default:"[]"|safe }}; // Datos para la gráfica
+
+        // Contenedor para la gráfica
+        const graficaContainer = document.getElementById('OcultarMostrarGrafica');
+
+        // Validar si hay datos disponibles
+        if (!datosGrafica || datosGrafica.length === 0) {
+            console.warn(`No hay datos para el nivel: ${nivel}, entidad: ${entidadSeleccionada}`);
+            graficaContainer.innerHTML = "<p style='color: red;'>No hay datos disponibles para esta gráfica.</p>";
+            return;
+        }
+
+        // Calcular el valor mínimo y máximo dinámicamente
+        const minValue = Math.min(...datosGrafica.map(item => item.y));
+        const maxValue = Math.max(...datosGrafica.map(item => item.y));
+
+        // Configuración y renderización de la gráfica con Highcharts
+        Highcharts.chart(graficaContainer, {
+            chart: {
+                type: 'column', // Tipo de gráfica: columnas
+                zoomType: 'x',  // Habilitar zoom horizontal
+                scrollablePlotArea: {
+                    minWidth: datosGrafica.length * 50, // Ajustar ancho mínimo según la cantidad de datos
+                    scrollPositionX: 0 // Posición inicial del scroll
+                }
+            },
+            title: {
+                text: '<img src="{% static "media/logo.jpg"  %}" alt="Imagen" style="height: 50px; vertical-align: center"><br>',
+                useHTML: true,
+            },
+            subtitle: {
+                text: '{{ indicador_label }}',
+                style: {
+                        fontfamily:'Montserrat',
+                        fontSize: '15px',
+                        color: 'black',
+                }                   
+            },               
+            xAxis: {
+                type: 'category',
+                labels: {
+                    rotation: -80,
+                    style: {
+                        fontSize: '12px',
+                        color: '#333'
+                    }
+                },
+                scrollbar: {
+                    enabled: true // Habilitar barra de desplazamiento en el eje X
+                },
+                min: 0, // Mostrar rango inicial limitado
+                //max: Math.min(20, datosGrafica.length) // Mostrar 20 barras por vez o menos si hay menos datos
+            },
+            yAxis: {
+                title: {
+                    text: `(%) {{ indicador_label }}`, //${indicadorNombre}`, // Etiqueta del eje Y
+                },
+                min: 0, // Asegurar que el eje Y comience desde 0
+                max: maxValue // Ajustar al valor máximo
+            },
+            colorAxis: {
+                min: minValue, // Valor mínimo dinámico
+                max: maxValue, // Valor máximo dinámico
+                stops: [
+                    [0, "#C7D4D4"],      // Color más claro
+                    [0.2, "#C4D4CC"],    // Color intermedio claro
+                    [0.5, "#90A4A4"],    // Color intermedio
+                    [1, "#245C54"]       // Color más oscuro
+                ]
+            },
+            series: [{
+                name: nivel === 'nacional' ? 'Entidades Federativas' : 'Municipios',
+                data: datosGrafica.map(item => ({
+                    name: item.name, // Nombre de la categoría
+                    y: parseFloat(item.y) || 0 // Valor numérico
+                })),
+                colorByPoint: true, // Colores dinámicos para cada barra
+                pointWidth: 40 // Ajustar el ancho de las barras
+            }],
+            tooltip: {
+                headerFormat: '<span style="font-size:10px">{point.key}</span><br>',
+                pointFormat: '<b>{point.y:.2f}%</b>' // Formato del tooltip
+            },
+            plotOptions: {
+                series: {
+                    borderWidth: 0,
+                    dataLabels: {
+                        enabled: true,
+                        format: '{point.y:.2f}%' // Mostrar valores en las barras
+                    }
+                }
+            },
+            responsive: {
+                rules: [{
+                    condition: {
+                        maxWidth: 800 // Responsividad para pantallas pequeñas
+                    },
+                    chartOptions: {
+                        xAxis: {
+                            labels: {
+                                rotation: -45, // Reducir rotación de las etiquetas
+                                style: {
+                                    fontSize: '10px'
+                                }
+                            }
+                        },
+                        yAxis: {
+                            labels: {
+                                style: {
+                                    fontSize: '10px'
+                                }
+                            }
+                        }
+                    }
+                }]
+            },
+            caption: {// Muestra la fuente cita en la parte inferior del la grafica
+                text: '<em><b>Fuente:</b> Mejoredu, cálculos con base en: </em>' + '</br>' +
+                       '<em><b>¹</b> Metodología del INPI y cifras censales 2020.</em>' + '</br>' +
+                       '<em><b>²</b> Índice de Marginación por Municipio 2020 (CONAPO, 2022).</em>' + '</br>' +
+                       '<em><b>³</b> Censo de Población y Vivienda 2020 (INEGI, 2021); Indicadores Socioeconómicos de los pueblos Indígenas y afromexicano 2020(INPI, 2022).</em>' + '</br>' +
+                       '<em><b>⁴</b> Estadísticas Continuas del Formato 911 (fin del ciclo escolar 2019-2020 e inicio del ciclo escolar 2020-2021)(SEP-DGPPYEE, 2021).</em>' + '</br>' +
+                       '<em><b>*</b> Para cualquier duda o más información, comunicarse al correo: <a href="url">contacto.sistema@mejoredu.gob.mx</a></em>',
+                style:{
+                   fontfamily:'Montserrat',
+                   fontSize: '11px',                                        
+                }
+            },
+        });
+    });
+</script>
+<!--############ JS en carpeta static  ################-->
+<script src="{% static "js/pagination.js"  %}"></script>
+<script src="{% static "js/Ocultar_MapTab.js"  %}"></script>
+<!--############## JS Estilos Gob #####################-->    
+<script src="https://framework-gb.cdn.gob.mx/gobmx.js"></script>
+<!--################# JS Highcharts ###################-->
+<script src = " https://code.highcharts.com/modules/exporting.js "></script>
+<script src = " https://code.highcharts.com/modules/export-data.js "></script>
+<script src = " https://code.highcharts.com/modules/accessibility.js "></script>
+<script src="https://code.highcharts.com/maps/highmaps.js"></script>
+</body>
+</html>
