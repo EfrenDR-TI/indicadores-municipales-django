@@ -132,10 +132,29 @@ http://127.0.0.1:8000/
 
 ## 📸 Capturas de pantalla
 
-- Mapa nacional por entidad
-- Mapa municipal por entidad seleccionada
-- Gráfica comparativa de indicadores
-- Tabla con filtros aplicados
+### Indicadores por Entidad Federativa
+
+**Mapa por entidad**
+![Mapa por entidad](docs/images/Indicadores%20por%20Entidad%20-%20Mapa.png)
+
+**Gráfica por entidad**
+![Gráfica por entidad](docs/images/Indicadores%20por%20Entidad%20-%20Grafica.png)
+
+**Tabla por entidad**
+![Tabla por entidad](docs/images/Indicadores%20por%20Entidad%20-%20Tabla.png)
+
+---
+
+### Indicadores por Municipio
+
+**Mapa por municipio**
+![Mapa por municipio](docs/images/Indicadores%20por%20Municipio%20-%20Mapa.png)
+
+**Gráfica por municipio**
+![Gráfica por municipio](docs/images/Indicadores%20por%20Municipio%20-%20Grafica.png)
+
+**Tabla por municipio**
+![Tabla por municipio](docs/images/Indicadores%20por%20Municipio%20-%20Tabla.png)
 
 
 ## 📄 Documentación adicional
