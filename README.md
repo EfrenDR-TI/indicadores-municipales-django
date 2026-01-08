@@ -159,10 +159,11 @@ http://127.0.0.1:8000/
 
 ## 📄 Documentación adicional
 
-El análisis detallado del proyecto, estructura de datos y decisiones de diseño se encuentra documentado en un archivo PDF independiente:
+El análisis detallado del proyecto, estructura de datos y decisiones de diseño se encuentran documentados en el siguiente archivo:
 
-📄 **Documento:**  
-docs/Analisis_Proyecto_Indicadores_Municipales.pdf
+📄 **Análisis y Desarrollo del Sistema Web de Indicadores Municipales** 
+[Ver documento PDF](docs/Analisis_y_Desarrollo_Sistema_Web_Indicadores_Municipales.pdf)
+
 
 ## 👤 Autor
 
