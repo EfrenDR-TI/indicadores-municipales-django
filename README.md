@@ -167,8 +167,8 @@ El análisis detallado del proyecto, estructura de datos y decisiones de diseño
 
 ## 👤 Autor
 
-**Efrén Dolores**
-Ingeniero en Informática
+Efrén Dolores**
+Ingeniero en Informática**
 Especialista en análisis de sistemas, bases de datos y visualización de información
 
 ## 📌 Notas finales
