@@ -168,8 +168,10 @@ El análisis detallado del proyecto, estructura de datos y decisiones de diseño
 ## 👤 Autor
 
 Efren Dolores  
-Ingeniero en Informática  
+Ingeniero en Informática
 Especialista en análisis de sistemas, bases de datos y visualización de información
+
+Perfil profesional enfocado en el diseño, modelado e implementación de soluciones tecnológicas basadas en datos. Experiencia en análisis de requerimientos, estructuración de información, automatización de reportes y validación funcional de sistemas, con enfoque en la toma de decisiones y el análisis territorial.
 
 ## 📌 Notas finales
 
